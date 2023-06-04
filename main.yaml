@@ -1,0 +1,33 @@
+---
+- name: Regularizacion - Ansible 4 k8s
+  hosts: localhost
+  gather_facts: False
+
+  vars:
+
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    replicas: 1
+
+  pre_tasks:
+
+    - name: Verificar estatus de minikube.
+      command: minikube status
+      register: minikube_status
+      changed_when: false
+      ignore_errors: true
+
+    - name: Iniciar Minikube si no esta corriendo.
+      command: minikube start --driver='docker'
+      when: "not minikube_status.stdout or 'Running' not in minikube_status.stdout"
+
+  tasks:
+
+    - name: Crea el deployment para flask-api.
+      k8s:
+        state: present
+        src: ./flask-api-deployment/deployment.yml
+
+    - name: Crea el servicio para flask-api.
+      k8s:
+        state: present
+        src: ./flask-api-deployment/service.yml
